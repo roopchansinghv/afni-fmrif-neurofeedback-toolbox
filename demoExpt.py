@@ -1,12 +1,13 @@
 
 #!/usr/bin/env python
 
-import afniInterfaceRT as nf
 import sys
 import logging
 from   optparse import OptionParser
 
 import numpy as np
+
+import afniInterfaceRT as nf
 
 # must use matplotlib with wx, not pylab
 try:
@@ -38,7 +39,7 @@ from   psychopy import visual, core # , sound
 
 class DemoExperiment(object):
 
-   def __init__(self, exptOptions):
+   def __init__(self, options):
 
       self.TR_data      = []
 
@@ -49,20 +50,35 @@ class DemoExperiment(object):
 
       self.demo_frame   = None  # for demo plot
       self.wx_app       = None  # wx App for demo plot
-      self.show_data    = exptOptions.show_data
+      self.show_data    = options.show_data
 
-      self._set_demo_gui()
-      print "++ Initializing experiment GUI"
-      self.exptWindow = visual.Window(fullscr=exptOptions.fullscreen, allowGUI=False)
-
+      print ("++ Initializing experiment stimuli")
+      self.setupExperiment()
 
 
-   def _set_demo_gui(self):
+
+   def setupExperiment(self):
 
       """create the GUI for display of the demo data"""
 
+      # self.exptWindow = visual.Window(fullscr=options.fullscreen, allowGUI=False)
+      self.exptWindow = visual.Window([1280, 720], allowGUI=False)
+
+      # For this demonstration experiement, set corners of the "active area" (where
+      # we will "draw") to be a square in the middle of a 16:9 screen.
+      self.stimAreaCorners = np.array ([[-0.50625, -0.9], [-0.50625, 0.9],
+                                        [0.50625, 0.9], [0.50625, -0.9]])
+
+      displayArea = visual.ShapeStim (self.exptWindow, vertices = self.stimAreaCorners,
+                                      autoLog = False, fillColor = [1, -1, -1])
+      displayArea.draw()
+      self.exptWindow.flip()
+
+      self.mask = np.tile("Receiver Demo Using PsychoPy", (16, 9))
+      self.boxList = list(range(0, 144))
+
       self.wx_app = wx.App()
-      self.demo_frame = CanvasFrame(title='receiver demo')
+      self.demo_frame = CanvasFrame(title='receiver demo wx')
       self.demo_frame.EnableCloseButton(True)
       self.demo_frame.Show(True)
       self.demo_frame.style = 'bar'
@@ -74,6 +90,23 @@ class DemoExperiment(object):
          self.demo_frame.set_limits(0, 9.1, -0.1, 10.1)
       elif self.demo_frame.style == 'bar':
          self.demo_frame.set_limits(0, 10.1, -0.1, 10.1)
+
+
+
+   def runExperiment (self):
+
+      # As the original demostration runs, in parallel, we will swap colors between
+      # red and blue for every volume receive.  This is just to verify initially we
+      # can draw and update "exptWindow" for every volume of data received.
+      if (len(self.TR_data) % 2):
+         displayArea = visual.ShapeStim (self.exptWindow, vertices = self.stimAreaCorners,
+                                         autoLog = False, fillColor = [-1, -1, 1])
+      else:
+         displayArea = visual.ShapeStim (self.exptWindow, vertices = self.stimAreaCorners,
+                                         autoLog = False, fillColor = [1, -1, -1])
+      displayArea.draw()
+      self.exptWindow.flip()
+
 
 
 
@@ -190,6 +223,8 @@ class DemoExperiment(object):
          self.TR_data.append(extra[0:npairs])
          self.process_demo_data()
 
+         self.runExperiment()
+
          return extra[0:npairs]    # return the partial list
 
       # # failure!
@@ -240,12 +275,6 @@ class CanvasFrame(wx.Frame):
       self.sizer.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
       self.SetSizer(self.sizer)
       self.Fit()
-
-      # toolbar?
-      # self.toolbar = NavigationToolbar2Wx(self.canvas)
-      # self.toolbar.Realize()
-      # self.sizer.Add(self.toolbar, 0, wx.BOTTOM | wx.EXPAND)
-      # self.toolbar.update()
 
       # axis plotting info
       self.ax = None
@@ -318,6 +347,33 @@ class CanvasFrame(wx.Frame):
       self.Fit()        # maybe not applied without a running app loop
       self.canvas.draw()
 
+      # import matplotlib.mlab as mlab
+      from matplotlib.pyplot import axis, title, xlabel, hist, grid, show, ylabel, plot
+      import pylab
+
+      results = data 
+
+      durations=results
+
+      pylab.figure(figsize=[30,10])
+      pylab.subplot(1,3,1)
+
+      n, bins, patches = hist(durations, 50, normed=True, facecolor='blue', alpha=0.75)
+      # add a 'best fit' line
+      # y = mlab.normpdf( bins, dmean, dstd)
+      # plot(bins, durations, 'r--', linewidth=1)
+      xlabel('ioHub getEvents Delay')
+      ylabel('Percentage')
+      title('ioHub Event Delay Histogram)') # (msec.usec):\n'+r'$\ \min={0:.3f},\ \max={1:.3f},\ \mu={2:.3f},\ \sigma={3:.3f}$'.format(
+              # dmin, dmax, dmean, dstd))
+      # axis([0, dmax+1.0, 0, 25.0])
+      grid(True)
+      pylab.subplot(1,3,2)
+      grid(True)
+      pylab.subplot(1,3,3)
+      grid(True)
+      # show()
+
 
 
    def exit(self):
@@ -326,11 +382,17 @@ class CanvasFrame(wx.Frame):
 
 
 
-def main():
+def processExperimentOptions (self, options=None):
+
+   """
+       Process command line options for on-going experiment.
+       Customize as needed for your own experiments.
+   """
 
    usage = "%prog [options]"
    description = "AFNI real-time demo receiver with demo visualization."
    parser = OptionParser(usage=usage, description=description)
+
    parser.add_option("-d", "--debug", action="store_true",
             help="enable debugging output")
    parser.add_option("-v", "--verbose", action="store_true",
@@ -343,7 +405,15 @@ def main():
    parser.add_option("-f", "--fullscreen", action="store_true",
             help="run in fullscreen mode")
 
-   opts, args = parser.parse_args()
+   return parser.parse_args(options)
+
+
+
+def main():
+
+   opts, args = processExperimentOptions(sys.argv)
+
+   # print ("Options are " + str(opts))
 
    if opts.verbose and not opts.debug:
       nf.add_stderr_logger(level=logging.INFO)
