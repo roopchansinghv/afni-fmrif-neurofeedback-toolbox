@@ -1,6 +1,11 @@
 
 #!/usr/bin/env python
 
+# The version of this script showing up at check-in should be able to run both the
+# original GUI (wx/Matplotlib) in the version of realtime_receiver.py, distributed
+# with AFNI, right along-side a PsychoPy interface, showing similar information,
+# with the same timing.
+
 import sys
 import logging
 from   optparse import OptionParser
@@ -66,16 +71,26 @@ class DemoExperiment(object):
 
       # For this demonstration experiement, set corners of the "active area" (where
       # we will "draw") to be a square in the middle of a 16:9 screen.
-      self.stimAreaCorners = np.array ([[-0.50625, -0.9], [-0.50625, 0.9],
-                                        [0.50625, 0.9], [0.50625, -0.9]])
+      self.nPlotPoints  = 10
+      self.xMax         = 0.50625
+      self.xMin         = self.xMax * -1.0
+      self.xDelta       = (self.xMax - self.xMin) / (1.0 * self.nPlotPoints)
+      self.yMax         = 0.9
+      self.yMin         = self.yMax * -1.0
+      self.yDelta       = (self.yMax - self.yMin) / (1.0 * self.nPlotPoints)
+
+      # Now cut this area up into a series of vertical rectangles that we will draw
+      # to when we have results
+      self.stimAreaCorners    = [None] * self.nPlotPoints
+
+      for i in range(self.nPlotPoints):
+         self.stimAreaCorners[i] = np.array ([[(self.xMin + (self.xDelta*(i+0))), self.yMin], [(self.xMin + (self.xDelta*(i+0))), self.yMax],
+                                              [(self.xMin + (self.xDelta*(i+1))), self.yMax], [(self.xMin + (self.xDelta*(i+1))), self.yMin]])
 
       displayArea = visual.ShapeStim (self.exptWindow, vertices = self.stimAreaCorners,
-                                      autoLog = False, fillColor = [1, -1, -1])
-      displayArea.draw()
-      self.exptWindow.flip()
+                                      autoLog = False, fillColor = [1, 1, 1])
 
-      self.mask = np.tile("Receiver Demo Using PsychoPy", (16, 9))
-      self.boxList = list(range(0, 144))
+      self.exptWindow.flip()
 
       self.wx_app = wx.App()
       self.demo_frame = CanvasFrame(title='receiver demo wx')
@@ -93,17 +108,20 @@ class DemoExperiment(object):
 
 
 
-   def runExperiment (self):
+   def runExperiment (self, data):
 
-      # As the original demostration runs, in parallel, we will swap colors between
-      # red and blue for every volume receive.  This is just to verify initially we
-      # can draw and update "exptWindow" for every volume of data received.
-      if (len(self.TR_data) % 2):
-         displayArea = visual.ShapeStim (self.exptWindow, vertices = self.stimAreaCorners,
-                                         autoLog = False, fillColor = [-1, -1, 1])
-      else:
-         displayArea = visual.ShapeStim (self.exptWindow, vertices = self.stimAreaCorners,
-                                         autoLog = False, fillColor = [1, -1, -1])
+      for i in range(self.nPlotPoints):
+         if (len(data) - 1 - i) > 0:
+            plotIndex = self.nPlotPoints - 1 - i
+            self.stimAreaCorners[plotIndex] = np.array ([
+                  [(self.xMin + (self.xDelta*(plotIndex+0))), self.yMin],
+                  [(self.xMin + (self.xDelta*(plotIndex+0))), self.yMin + self.yDelta * data[len(data) - 1 - i][0]],
+                  [(self.xMin + (self.xDelta*(plotIndex+1))), self.yMin + self.yDelta * data[len(data) - 1 - i][0]],
+                  [(self.xMin + (self.xDelta*(plotIndex+1))), self.yMin]
+                                                                      ])
+
+      displayArea = visual.ShapeStim (self.exptWindow, vertices = self.stimAreaCorners,
+                                      autoLog = False, fillColor = [-1, -1, 1])
       displayArea.draw()
       self.exptWindow.flip()
 
@@ -124,7 +142,11 @@ class DemoExperiment(object):
          else:
             bot = 0
          pdata = [self.TR_data[ind][0] for ind in range(bot, length)]
+
          self.demo_frame.plot_data(pdata)
+
+         self.runExperiment(self.TR_data)
+
 
 
 
@@ -222,8 +244,6 @@ class DemoExperiment(object):
          # save data and process
          self.TR_data.append(extra[0:npairs])
          self.process_demo_data()
-
-         self.runExperiment()
 
          return extra[0:npairs]    # return the partial list
 
@@ -346,33 +366,6 @@ class CanvasFrame(wx.Frame):
 
       self.Fit()        # maybe not applied without a running app loop
       self.canvas.draw()
-
-      # import matplotlib.mlab as mlab
-      from matplotlib.pyplot import axis, title, xlabel, hist, grid, show, ylabel, plot
-      import pylab
-
-      results = data 
-
-      durations=results
-
-      pylab.figure(figsize=[30,10])
-      pylab.subplot(1,3,1)
-
-      n, bins, patches = hist(durations, 50, normed=True, facecolor='blue', alpha=0.75)
-      # add a 'best fit' line
-      # y = mlab.normpdf( bins, dmean, dstd)
-      # plot(bins, durations, 'r--', linewidth=1)
-      xlabel('ioHub getEvents Delay')
-      ylabel('Percentage')
-      title('ioHub Event Delay Histogram)') # (msec.usec):\n'+r'$\ \min={0:.3f},\ \max={1:.3f},\ \mu={2:.3f},\ \sigma={3:.3f}$'.format(
-              # dmin, dmax, dmean, dstd))
-      # axis([0, dmax+1.0, 0, 25.0])
-      grid(True)
-      pylab.subplot(1,3,2)
-      grid(True)
-      pylab.subplot(1,3,3)
-      grid(True)
-      # show()
 
 
 
