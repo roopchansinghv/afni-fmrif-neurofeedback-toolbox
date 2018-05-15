@@ -1,10 +1,13 @@
 
 #!/usr/bin/env python
 
-# The version of this script showing up at check-in should be able to run both the
-# original GUI (wx/Matplotlib) in the version of realtime_receiver.py, distributed
-# with AFNI, right along-side a PsychoPy interface, showing similar information,
-# with the same timing.
+# The version of this script showing up at check-in should run the experiment
+# in the version of realtime_receiver.py distributed with AFNI, but using a
+# PsychoPy interface, instead of the original wx/Matplotlib GUI.  All of the
+# code to run this GUI is still present, but is commented out with the string,
+# '# For orig wx demo # '.  To recover the functionality of the original GUI,
+# remove all occurences of this string, and comment out the 'if True' statment
+# indicated below, below the 'if self.demo_frame' statement .
 
 import sys
 import logging
@@ -14,29 +17,29 @@ import numpy as np
 
 import afniInterfaceRT as nf
 
-# must use matplotlib with wx, not pylab
-try:
-   import wx
-except ImportError:
-    pass
+# For orig wx demo # # must use matplotlib with wx, not pylab
+# For orig wx demo # try:
+   # For orig wx demo # import wx
+# For orig wx demo # except ImportError:
+    # For orig wx demo # pass
 
-try:
-   import matplotlib
-   matplotlib.use('WXAgg')
+# For orig wx demo # try:
+   # For orig wx demo # import matplotlib
+   # For orig wx demo # matplotlib.use('WXAgg')
 
-   # set some resource font values
-   matplotlib.rc('axes', titlesize=11)
-   matplotlib.rc('axes', labelsize=9)
-   matplotlib.rc('xtick', labelsize=8)
-   matplotlib.rc('ytick', labelsize=7)
+   # For orig wx demo # # set some resource font values
+   # For orig wx demo # matplotlib.rc('axes', titlesize=11)
+   # For orig wx demo # matplotlib.rc('axes', labelsize=9)
+   # For orig wx demo # matplotlib.rc('xtick', labelsize=8)
+   # For orig wx demo # matplotlib.rc('ytick', labelsize=7)
 
-   from   matplotlib.backends.backend_wxagg import FigureCanvasWx as FigureCanvas
-   from   matplotlib.backends.backend_wxagg import NavigationToolbar2Wx
-   from   matplotlib.figure import Figure
+   # For orig wx demo # from   matplotlib.backends.backend_wxagg import FigureCanvasWx as FigureCanvas
+   # For orig wx demo # from   matplotlib.backends.backend_wxagg import NavigationToolbar2Wx
+   # For orig wx demo # from   matplotlib.figure import Figure
 
-   from   matplotlib.ticker import FormatStrFormatter
-except ImportError:
-    pass
+   # For orig wx demo # from   matplotlib.ticker import FormatStrFormatter
+# For orig wx demo # except ImportError:
+    # For orig wx demo # pass
     
 from   psychopy import visual, core # , sound
 
@@ -53,8 +56,8 @@ class DemoExperiment(object):
       # result is (dr-P1)*P2  {applied in [0,1]}
       self.dc_params    = []
 
-      self.demo_frame   = None  # for demo plot
-      self.wx_app       = None  # wx App for demo plot
+      # For orig wx demo # self.demo_frame   = None  # for demo plot
+      # For orig wx demo # self.wx_app       = None  # wx App for demo plot
       self.show_data    = options.show_data
 
       print ("++ Initializing experiment stimuli")
@@ -92,19 +95,19 @@ class DemoExperiment(object):
 
       self.exptWindow.flip()
 
-      self.wx_app = wx.App()
-      self.demo_frame = CanvasFrame(title='receiver demo wx')
-      self.demo_frame.EnableCloseButton(True)
-      self.demo_frame.Show(True)
-      self.demo_frame.style = 'bar'
-      self.demo_frame.xlabel = 'most recent 10 TRs'
-      self.demo_frame.ylabel = 'scaled diff_ratio'
+      # For orig wx demo # self.wx_app = wx.App()
+      # For orig wx demo # self.demo_frame = CanvasFrame(title='receiver demo wx')
+      # For orig wx demo # self.demo_frame.EnableCloseButton(True)
+      # For orig wx demo # self.demo_frame.Show(True)
+      # For orig wx demo # self.demo_frame.style = 'bar'
+      # For orig wx demo # self.demo_frame.xlabel = 'most recent 10 TRs'
+      # For orig wx demo # self.demo_frame.ylabel = 'scaled diff_ratio'
 
-      # for the current demo, set an ranges for 10 numbers in [0,10]
-      if self.demo_frame.style == 'graph':
-         self.demo_frame.set_limits(0, 9.1, -0.1, 10.1)
-      elif self.demo_frame.style == 'bar':
-         self.demo_frame.set_limits(0, 10.1, -0.1, 10.1)
+      # For orig wx demo # # for the current demo, set an ranges for 10 numbers in [0,10]
+      # For orig wx demo # if self.demo_frame.style == 'graph':
+         # For orig wx demo # self.demo_frame.set_limits(0, 9.1, -0.1, 10.1)
+      # For orig wx demo # elif self.demo_frame.style == 'bar':
+         # For orig wx demo # self.demo_frame.set_limits(0, 10.1, -0.1, 10.1)
 
 
 
@@ -136,14 +139,15 @@ class DemoExperiment(object):
 
       if self.show_data:
          print('-- TR %d, demo value: %s' % (length, self.TR_data[length - 1][0]))
-      if self.demo_frame:
+      # For orig wx demo # if self.demo_frame:
+      if True: # Comment out this line if using wx/Matplotlib GUI toolkit
          if length > 10:
             bot = length - 10
          else:
             bot = 0
          pdata = [self.TR_data[ind][0] for ind in range(bot, length)]
 
-         self.demo_frame.plot_data(pdata)
+         # For orig wx demo # self.demo_frame.plot_data(pdata)
 
          self.runExperiment(self.TR_data)
 
@@ -258,120 +262,120 @@ class DemoExperiment(object):
 # general plotting routine:
 #
 
-def plot(data, title=''):
+# For orig wx demo # def plot(data, title=''):
 
-   """plot data"""
+   # For orig wx demo # """plot data"""
 
-   frame = CanvasFrame(title=title)
+   # For orig wx demo # frame = CanvasFrame(title=title)
 
-   if title == '':
-      title = 'basic plot'
-   frame.SetTitle(title)
+   # For orig wx demo # if title == '':
+      # For orig wx demo # title = 'basic plot'
+   # For orig wx demo # frame.SetTitle(title)
 
-   frame.Show(True)
-   frame.plot_data(data)
+   # For orig wx demo # frame.Show(True)
+   # For orig wx demo # frame.plot_data(data)
 
-   return 0, frame
-
-
-
-# ======================================================================
-# main plotting canvas class
-
-class CanvasFrame(wx.Frame):
-
-   """create a main plotting canvas
-        title   : optional window title
-   """
-
-   counter = 0
-
-   def __init__(self, title=''):
-
-      wx.Frame.__init__(self, None, -1, title, size=(400, 300))
-      self.figure = Figure()
-      self.canvas = FigureCanvas(self, -1, self.figure)
-      self.sizer = wx.BoxSizer(wx.VERTICAL)
-      self.sizer.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
-      self.SetSizer(self.sizer)
-      self.Fit()
-
-      # axis plotting info
-      self.ax = None
-      self.xmin = 1.0
-      self.xmax = 0.0
-      self.ymin = 1.0
-      self.ymax = 0.0
-      self.xlabel = ''
-      self.ylabel = ''
-      self.style = 'graph'
-
-      self.images = []
-
-      self.toolbar = NavigationToolbar2Wx(self.canvas)
-      self.toolbar.Realize()
-      self.sizer.Add(self.toolbar, 0, wx.LEFT | wx.EXPAND)
-      self.toolbar.update()
+   # For orig wx demo # return 0, frame
 
 
 
-   def cb_keypress(self, event):
+# For orig wx demo # # ======================================================================
+# For orig wx demo # # main plotting canvas class
 
-      if event.key == 'q':
-         self.Close()
+# For orig wx demo # class CanvasFrame(wx.Frame):
 
+   # For orig wx demo # """create a main plotting canvas
+        # For orig wx demo # title   : optional window title
+   # For orig wx demo # """
 
+   # For orig wx demo # counter = 0
 
-   def set_limits(self, xmin=1.0, xmax=0.0, ymin=1.0, ymax=0.0):
+   # For orig wx demo # def __init__(self, title=''):
 
-      """if xmin < xmax: apply, and similarly for y"""
+      # For orig wx demo # wx.Frame.__init__(self, None, -1, title, size=(400, 300))
+      # For orig wx demo # self.figure = Figure()
+      # For orig wx demo # self.canvas = FigureCanvas(self, -1, self.figure)
+      # For orig wx demo # self.sizer = wx.BoxSizer(wx.VERTICAL)
+      # For orig wx demo # self.sizer.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
+      # For orig wx demo # self.SetSizer(self.sizer)
+      # For orig wx demo # self.Fit()
 
-      if xmin < xmax:
-         self.xmin = xmin
-         self.xmax = xmax
-         print('-- resetting xlimits to:', xmin, xmax)
+      # For orig wx demo # # axis plotting info
+      # For orig wx demo # self.ax = None
+      # For orig wx demo # self.xmin = 1.0
+      # For orig wx demo # self.xmax = 0.0
+      # For orig wx demo # self.ymin = 1.0
+      # For orig wx demo # self.ymax = 0.0
+      # For orig wx demo # self.xlabel = ''
+      # For orig wx demo # self.ylabel = ''
+      # For orig wx demo # self.style = 'graph'
 
-      if ymin < ymax:
-         self.ymin = ymin
-         self.ymax = ymax
-         print('-- resetting ylimits to:', ymin, ymax)
+      # For orig wx demo # self.images = []
 
-
-
-   def plot_data(self, data, title=''):
-
-      """plot data
-         style can be 'graph' or 'bar'"""
-
-      if self.ax is None:
-         self.ax = self.figure.add_subplot(1, 1, 1, title=title)
-
-      self.ax.clear()
-
-      if self.style == 'graph':
-         self.ax.plot(data)
-         self.ax.grid(True)
-      else:     # bars of width 1
-         offsets = np.arange(len(data))
-         bars = self.ax.bar(offsets, data, 1)
-
-      self.ax.set_xlabel(self.xlabel)
-      self.ax.set_ylabel(self.ylabel)
-
-      # after data is plotted, set limits
-      if self.xmin < self.xmax:
-         self.ax.set_xlim((self.xmin, self.xmax))
-      if self.ymin < self.ymax:
-         self.ax.set_ylim((self.ymin, self.ymax))
-
-      self.Fit()        # maybe not applied without a running app loop
-      self.canvas.draw()
+      # For orig wx demo # self.toolbar = NavigationToolbar2Wx(self.canvas)
+      # For orig wx demo # self.toolbar.Realize()
+      # For orig wx demo # self.sizer.Add(self.toolbar, 0, wx.LEFT | wx.EXPAND)
+      # For orig wx demo # self.toolbar.update()
 
 
 
-   def exit(self):
+   # For orig wx demo # def cb_keypress(self, event):
 
-      self.Destroy()
+      # For orig wx demo # if event.key == 'q':
+         # For orig wx demo # self.Close()
+
+
+
+   # For orig wx demo # def set_limits(self, xmin=1.0, xmax=0.0, ymin=1.0, ymax=0.0):
+
+      # For orig wx demo # """if xmin < xmax: apply, and similarly for y"""
+
+      # For orig wx demo # if xmin < xmax:
+         # For orig wx demo # self.xmin = xmin
+         # For orig wx demo # self.xmax = xmax
+         # For orig wx demo # print('-- resetting xlimits to:', xmin, xmax)
+
+      # For orig wx demo # if ymin < ymax:
+         # For orig wx demo # self.ymin = ymin
+         # For orig wx demo # self.ymax = ymax
+         # For orig wx demo # print('-- resetting ylimits to:', ymin, ymax)
+
+
+
+   # For orig wx demo # def plot_data(self, data, title=''):
+
+      # For orig wx demo # """plot data
+         # For orig wx demo # style can be 'graph' or 'bar'"""
+
+      # For orig wx demo # if self.ax is None:
+         # For orig wx demo # self.ax = self.figure.add_subplot(1, 1, 1, title=title)
+
+      # For orig wx demo # self.ax.clear()
+
+      # For orig wx demo # if self.style == 'graph':
+         # For orig wx demo # self.ax.plot(data)
+         # For orig wx demo # self.ax.grid(True)
+      # For orig wx demo # else:     # bars of width 1
+         # For orig wx demo # offsets = np.arange(len(data))
+         # For orig wx demo # bars = self.ax.bar(offsets, data, 1)
+
+      # For orig wx demo # self.ax.set_xlabel(self.xlabel)
+      # For orig wx demo # self.ax.set_ylabel(self.ylabel)
+
+      # For orig wx demo # # after data is plotted, set limits
+      # For orig wx demo # if self.xmin < self.xmax:
+         # For orig wx demo # self.ax.set_xlim((self.xmin, self.xmax))
+      # For orig wx demo # if self.ymin < self.ymax:
+         # For orig wx demo # self.ax.set_ylim((self.ymin, self.ymax))
+
+      # For orig wx demo # self.Fit()        # maybe not applied without a running app loop
+      # For orig wx demo # self.canvas.draw()
+
+
+
+   # For orig wx demo # def exit(self):
+
+      # For orig wx demo # self.Destroy()
 
 
 
