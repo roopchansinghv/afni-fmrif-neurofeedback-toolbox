@@ -90,8 +90,8 @@ class DemoExperiment(object):
          self.stimAreaCorners[i] = np.array ([[(self.xMin + (self.xDelta*(i+0))), self.yMin], [(self.xMin + (self.xDelta*(i+0))), self.yMax],
                                               [(self.xMin + (self.xDelta*(i+1))), self.yMax], [(self.xMin + (self.xDelta*(i+1))), self.yMin]])
 
-      displayArea = visual.ShapeStim (self.exptWindow, vertices = self.stimAreaCorners,
-                                      autoLog = False, fillColor = [1, 1, 1])
+         displayArea = visual.ShapeStim (self.exptWindow, vertices = self.stimAreaCorners[i],
+                                         autoLog = False, fillColor = [1, 1, 1])
 
       self.exptWindow.flip()
 
@@ -123,9 +123,10 @@ class DemoExperiment(object):
                   [(self.xMin + (self.xDelta*(plotIndex+1))), self.yMin]
                                                                       ])
 
-      displayArea = visual.ShapeStim (self.exptWindow, vertices = self.stimAreaCorners,
-                                      autoLog = False, fillColor = [-1, -1, 1])
-      displayArea.draw()
+            displayArea = visual.ShapeStim (self.exptWindow, vertices = self.stimAreaCorners[i],
+                                            autoLog = False, fillColor = [-1, -1, 1])
+            displayArea.draw()
+
       self.exptWindow.flip()
 
 
