@@ -1,13 +1,17 @@
 
 #!/usr/bin/env python
 
-# The version of this script showing up at check-in should run the experiment
-# in the version of realtime_receiver.py distributed with AFNI, but using a
-# PsychoPy interface, instead of the original wx/Matplotlib GUI.  All of the
-# code to run this GUI is still present, but is commented out with the string,
-# '# For orig wx demo # '.  To recover the functionality of the original GUI,
-# remove all occurences of this string, and comment out the 'if True' statment
-# indicated below, below the 'if self.demo_frame' statement .
+# This is a reimplementation of the default real-time feedback experiment
+# distributed with AFNI, implemented in realtime_receiver.py, using WX and
+# Matplotlib for generating the GUI and plotting the results.
+#
+# This replaces the default GUI toolkit with PsychoPy, and will draw the
+# same results and shapes to a PsychoPy window, in a manner synchronous
+# with the old toolkit.
+#
+# This will serve as a basis or a template to build neuro-feedback type
+# of experiment that can get data from AFNI (through the 'afniInterfaceRT'
+# module, also distributed here).
 
 import sys
 import logging
@@ -17,30 +21,6 @@ import numpy as np
 
 import afniInterfaceRT as nf
 
-# For orig wx demo # # must use matplotlib with wx, not pylab
-# For orig wx demo # try:
-   # For orig wx demo # import wx
-# For orig wx demo # except ImportError:
-    # For orig wx demo # pass
-
-# For orig wx demo # try:
-   # For orig wx demo # import matplotlib
-   # For orig wx demo # matplotlib.use('WXAgg')
-
-   # For orig wx demo # # set some resource font values
-   # For orig wx demo # matplotlib.rc('axes', titlesize=11)
-   # For orig wx demo # matplotlib.rc('axes', labelsize=9)
-   # For orig wx demo # matplotlib.rc('xtick', labelsize=8)
-   # For orig wx demo # matplotlib.rc('ytick', labelsize=7)
-
-   # For orig wx demo # from   matplotlib.backends.backend_wxagg import FigureCanvasWx as FigureCanvas
-   # For orig wx demo # from   matplotlib.backends.backend_wxagg import NavigationToolbar2Wx
-   # For orig wx demo # from   matplotlib.figure import Figure
-
-   # For orig wx demo # from   matplotlib.ticker import FormatStrFormatter
-# For orig wx demo # except ImportError:
-    # For orig wx demo # pass
-    
 from   psychopy import visual, core # , sound
 
 
@@ -56,8 +36,6 @@ class DemoExperiment(object):
       # result is (dr-P1)*P2  {applied in [0,1]}
       self.dc_params    = []
 
-      # For orig wx demo # self.demo_frame   = None  # for demo plot
-      # For orig wx demo # self.wx_app       = None  # wx App for demo plot
       self.show_data    = options.show_data
 
       print ("++ Initializing experiment stimuli")
@@ -82,76 +60,68 @@ class DemoExperiment(object):
       self.yMin         = self.yMax * -1.0
       self.yDelta       = (self.yMax - self.yMin) / (1.0 * self.nPlotPoints)
 
-      # Now cut this area up into a series of vertical rectangles that we will draw
-      # to when we have results
+      # Now divide this area into a series of vertical rectangles that we will draw
+      # to when we have results.
       self.stimAreaCorners    = [None] * self.nPlotPoints
+      self.drawnCorners       = [None] * self.nPlotPoints
 
       for i in range(self.nPlotPoints):
-         self.stimAreaCorners[i] = np.array ([[(self.xMin + (self.xDelta*(i+0))), self.yMin], [(self.xMin + (self.xDelta*(i+0))), self.yMax],
-                                              [(self.xMin + (self.xDelta*(i+1))), self.yMax], [(self.xMin + (self.xDelta*(i+1))), self.yMin]])
+         self.stimAreaCorners[i] = np.array ([[(self.xMin + (self.xDelta*(i+1))), self.yMin],
+                                              [(self.xMin + (self.xDelta*(i+1))), self.yMin],
+                                              [(self.xMin + (self.xDelta*(i+0))), self.yMin],
+                                              [(self.xMin + (self.xDelta*(i+0))), self.yMin]])
+
+         self.drawnCorners[i]    = self.stimAreaCorners[i]
 
          displayArea = visual.ShapeStim (self.exptWindow, vertices = self.stimAreaCorners[i],
                                          autoLog = False, fillColor = [1, 1, 1])
 
       self.exptWindow.flip()
 
-      # For orig wx demo # self.wx_app = wx.App()
-      # For orig wx demo # self.demo_frame = CanvasFrame(title='receiver demo wx')
-      # For orig wx demo # self.demo_frame.EnableCloseButton(True)
-      # For orig wx demo # self.demo_frame.Show(True)
-      # For orig wx demo # self.demo_frame.style = 'bar'
-      # For orig wx demo # self.demo_frame.xlabel = 'most recent 10 TRs'
-      # For orig wx demo # self.demo_frame.ylabel = 'scaled diff_ratio'
-
-      # For orig wx demo # # for the current demo, set an ranges for 10 numbers in [0,10]
-      # For orig wx demo # if self.demo_frame.style == 'graph':
-         # For orig wx demo # self.demo_frame.set_limits(0, 9.1, -0.1, 10.1)
-      # For orig wx demo # elif self.demo_frame.style == 'bar':
-         # For orig wx demo # self.demo_frame.set_limits(0, 10.1, -0.1, 10.1)
-
 
 
    def runExperiment (self, data):
 
-      for i in range(self.nPlotPoints):
-         if (len(data) - 1 - i) > 0:
-            plotIndex = self.nPlotPoints - 1 - i
-            self.stimAreaCorners[plotIndex] = np.array ([
-                  [(self.xMin + (self.xDelta*(plotIndex+0))), self.yMin],
-                  [(self.xMin + (self.xDelta*(plotIndex+0))), self.yMin + self.yDelta * data[len(data) - 1 - i][0]],
-                  [(self.xMin + (self.xDelta*(plotIndex+1))), self.yMin + self.yDelta * data[len(data) - 1 - i][0]],
-                  [(self.xMin + (self.xDelta*(plotIndex+1))), self.yMin]
-                                                                      ])
+      """
+         After data is received and processed by the 'compute_TR_data' routine,
+         call this routine to update the display, or whatever stimulus is being
+         generated for the experiment.  This update should be a consistent
+         follow on to what was done in the 'setupExperiment' routine.
+      """
 
-            displayArea = visual.ShapeStim (self.exptWindow, vertices = self.stimAreaCorners[i],
-                                            autoLog = False, fillColor = [-1, -1, 1])
-            displayArea.draw()
-
-      self.exptWindow.flip()
-
-
-
-
-   def process_demo_data(self):
-
-      length = len(self.TR_data)
+      length = len(data)
       if length == 0:
          return
 
       if self.show_data:
-         print('-- TR %d, demo value: %s' % (length, self.TR_data[length - 1][0]))
-      # For orig wx demo # if self.demo_frame:
-      if True: # Comment out this line if using wx/Matplotlib GUI toolkit
+         print('-- TR %d, demo value: %s' % (length, data[length - 1][0]))
+      if True:
          if length > 10:
             bot = length - 10
          else:
             bot = 0
-         pdata = [self.TR_data[ind][0] for ind in range(bot, length)]
+         pdata = [data[ind][0] for ind in range(bot, length)]
 
-         # For orig wx demo # self.demo_frame.plot_data(pdata)
+         # To update the rectangles to be drawn, with the results of the stimulus modeling, add
+         # the new data to the base shapes (using the simple element-by-element addition done
+         # by numpy's matrix opertions). Also, update the display area as every shape is updated
+         # to avoid drawing artifacts, where vertices get incorrectly assigned to the area to be
+         # drawn.
+         for i in range(self.nPlotPoints):
+            if (len(data) - 1 - i) > 0:
+               plotIndex = self.nPlotPoints - 1 - i
+               self.drawnCorners[plotIndex] = np.array ([
+                                                 [0.0, (self.yDelta * data[len(data) - 1 - i][0])],
+                                                 [0.0, 0.0],
+                                                 [0.0, 0.0],
+                                                 [0.0, (self.yDelta * data[len(data) - 1 - i][0])]
+                                                       ]) + self.stimAreaCorners[plotIndex]
 
-         self.runExperiment(self.TR_data)
+               displayArea = visual.ShapeStim (self.exptWindow, vertices = self.drawnCorners[plotIndex],
+                                         autoLog = False, fillColor = [-1, -1, 1])
+               displayArea.draw()
 
+         self.exptWindow.flip()
 
 
 
@@ -248,135 +218,9 @@ class DemoExperiment(object):
 
          # save data and process
          self.TR_data.append(extra[0:npairs])
-         self.process_demo_data()
+         self.runExperiment(self.TR_data)
 
          return extra[0:npairs]    # return the partial list
-
-      # # failure!
-      # else:
-      #     print("** invalid data_choice '%s', shutting down ..." % rec.data_choice)
-      #     return -1, []
-
-
-
-# ======================================================================
-# general plotting routine:
-#
-
-# For orig wx demo # def plot(data, title=''):
-
-   # For orig wx demo # """plot data"""
-
-   # For orig wx demo # frame = CanvasFrame(title=title)
-
-   # For orig wx demo # if title == '':
-      # For orig wx demo # title = 'basic plot'
-   # For orig wx demo # frame.SetTitle(title)
-
-   # For orig wx demo # frame.Show(True)
-   # For orig wx demo # frame.plot_data(data)
-
-   # For orig wx demo # return 0, frame
-
-
-
-# For orig wx demo # # ======================================================================
-# For orig wx demo # # main plotting canvas class
-
-# For orig wx demo # class CanvasFrame(wx.Frame):
-
-   # For orig wx demo # """create a main plotting canvas
-        # For orig wx demo # title   : optional window title
-   # For orig wx demo # """
-
-   # For orig wx demo # counter = 0
-
-   # For orig wx demo # def __init__(self, title=''):
-
-      # For orig wx demo # wx.Frame.__init__(self, None, -1, title, size=(400, 300))
-      # For orig wx demo # self.figure = Figure()
-      # For orig wx demo # self.canvas = FigureCanvas(self, -1, self.figure)
-      # For orig wx demo # self.sizer = wx.BoxSizer(wx.VERTICAL)
-      # For orig wx demo # self.sizer.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
-      # For orig wx demo # self.SetSizer(self.sizer)
-      # For orig wx demo # self.Fit()
-
-      # For orig wx demo # # axis plotting info
-      # For orig wx demo # self.ax = None
-      # For orig wx demo # self.xmin = 1.0
-      # For orig wx demo # self.xmax = 0.0
-      # For orig wx demo # self.ymin = 1.0
-      # For orig wx demo # self.ymax = 0.0
-      # For orig wx demo # self.xlabel = ''
-      # For orig wx demo # self.ylabel = ''
-      # For orig wx demo # self.style = 'graph'
-
-      # For orig wx demo # self.images = []
-
-      # For orig wx demo # self.toolbar = NavigationToolbar2Wx(self.canvas)
-      # For orig wx demo # self.toolbar.Realize()
-      # For orig wx demo # self.sizer.Add(self.toolbar, 0, wx.LEFT | wx.EXPAND)
-      # For orig wx demo # self.toolbar.update()
-
-
-
-   # For orig wx demo # def cb_keypress(self, event):
-
-      # For orig wx demo # if event.key == 'q':
-         # For orig wx demo # self.Close()
-
-
-
-   # For orig wx demo # def set_limits(self, xmin=1.0, xmax=0.0, ymin=1.0, ymax=0.0):
-
-      # For orig wx demo # """if xmin < xmax: apply, and similarly for y"""
-
-      # For orig wx demo # if xmin < xmax:
-         # For orig wx demo # self.xmin = xmin
-         # For orig wx demo # self.xmax = xmax
-         # For orig wx demo # print('-- resetting xlimits to:', xmin, xmax)
-
-      # For orig wx demo # if ymin < ymax:
-         # For orig wx demo # self.ymin = ymin
-         # For orig wx demo # self.ymax = ymax
-         # For orig wx demo # print('-- resetting ylimits to:', ymin, ymax)
-
-
-
-   # For orig wx demo # def plot_data(self, data, title=''):
-
-      # For orig wx demo # """plot data
-         # For orig wx demo # style can be 'graph' or 'bar'"""
-
-      # For orig wx demo # if self.ax is None:
-         # For orig wx demo # self.ax = self.figure.add_subplot(1, 1, 1, title=title)
-
-      # For orig wx demo # self.ax.clear()
-
-      # For orig wx demo # if self.style == 'graph':
-         # For orig wx demo # self.ax.plot(data)
-         # For orig wx demo # self.ax.grid(True)
-      # For orig wx demo # else:     # bars of width 1
-         # For orig wx demo # offsets = np.arange(len(data))
-         # For orig wx demo # bars = self.ax.bar(offsets, data, 1)
-
-      # For orig wx demo # self.ax.set_xlabel(self.xlabel)
-      # For orig wx demo # self.ax.set_ylabel(self.ylabel)
-
-      # For orig wx demo # # after data is plotted, set limits
-      # For orig wx demo # if self.xmin < self.xmax:
-         # For orig wx demo # self.ax.set_xlim((self.xmin, self.xmax))
-      # For orig wx demo # if self.ymin < self.ymax:
-         # For orig wx demo # self.ax.set_ylim((self.ymin, self.ymax))
-
-      # For orig wx demo # self.Fit()        # maybe not applied without a running app loop
-      # For orig wx demo # self.canvas.draw()
-
-
-
-   # For orig wx demo # def exit(self):
-
-      # For orig wx demo # self.Destroy()
 
 
 
