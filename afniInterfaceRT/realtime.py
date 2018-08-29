@@ -10,10 +10,16 @@
 
 import sys
 import time
-import socket
 import struct
 import logging
+import platform
+import socket
+# import datetime
+
 log = logging.getLogger(__name__)
+log.setLevel(logging.CRITICAL)
+# dateTimeString = datetime.datetime.now().strftime("-%Y-%m-%d-%H-%M-%S") 
+# logging.basicConfig(filename='realtime' + dateTimeString + '.log')
 
 try:
     import serial
@@ -119,18 +125,32 @@ class RTInterface(object):
 
 
 
-   def read_nbytes_from_data_socket(self, nbytes, flag=socket.MSG_WAITALL):
+   def read_nbytes_from_data_socket(self, nbytes):
 
       """try to read nbytes from data socket, reporting any errors"""
 
       # It is important to specify the list of exceptions to trap here,
       # otherwise it would catch a ctrl-c and continue after sys.exit().
 
-      try:
-         data = self.data_sock.recv(nbytes, flag)
-      except(socket.error, socket.herror, socket.gaierror, socket.timeout):
-         log.error('** recv() exception on data socket')
-         return None
+      # The following has to be done as MSG_WAITALL doesn't seem to be
+      # defined for Windows.  This workaround was found at:
+      #
+      #    https://www.programcreek.com/python/example/63443/socket.MSG_WAITALL
+      #
+      if hasattr(socket, "MSG_WAITALL"):
+         try:
+            data = self.data_sock.recv(nbytes, socket.MSG_WAITALL)
+         except(socket.error, socket.herror, socket.gaierror, socket.timeout):
+            log.error('** recv() exception on data socket')
+            return None
+      else:
+         try:
+            data = b''
+            while len(data) < nbytes:
+               data += self.data_sock.recv(nbytes - len(data))
+         except(socket.error, socket.herror, socket.gaierror, socket.timeout):
+            log.error('** recv() exception on data socket')
+            return None
 
       if not data:
          log.error('** failed recv() of %d bytes from data socket' % nbytes)
@@ -158,7 +178,8 @@ class RTInterface(object):
       if nvals <= 0:
          return []
 
-      data = self.read_nbytes_from_data_socket(nvals * 4)  # read all bytes
+      data = self.read_nbytes_from_data_socket(nvals * 4)      # read all bytes
+
       if not data:
          log.error("** failed to read %d int(s)" % nvals)
          return None
@@ -188,7 +209,8 @@ class RTInterface(object):
       if nvals <= 0:
          return []
 
-      data = self.read_nbytes_from_data_socket(nvals * 4)  # read all bytes
+      data = self.read_nbytes_from_data_socket(nvals * 4)      # read all bytes
+
       if not data:
          log.error("** failed to read %d floats(s)" % nvals)
          return None
@@ -197,14 +219,6 @@ class RTInterface(object):
       vals = []
       if self.swap:
          swap4(data)
-         # for ind in range(nvals):
-            # off = ind * 4
-            # v = data[off]     # swap d[0] and d[3]
-            # data[off] = data[off + 3]
-            # data[off + 3] = v
-            # v = data[off + 1]   # swap d[1] and d[2]
-            # data[off + 1] = data[off + 2]
-            # data[off + 2] = v
 
       vals = list(struct.unpack('f' * nvals, data))
 
@@ -218,7 +232,12 @@ class RTInterface(object):
 
       """peek at and print out the next nbytes of data"""
 
-      data = self.read_nbytes_from_data_socket(nbytes, flag=socket.MSG_PEEK)
+      try:
+         data = self.data_sock.recv(nbytes, socket.MSG_PEEK)
+      except(socket.error, socket.herror, socket.gaierror, socket.timeout):
+         log.error('** recv() exception on PEEK on data socket')
+         return None
+
       if not data:
          log.error('** failed to peek ahead')
          return None

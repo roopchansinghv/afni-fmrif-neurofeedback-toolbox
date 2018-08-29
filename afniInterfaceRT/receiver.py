@@ -3,7 +3,14 @@ import sys
 import signal
 import realtime as rt
 import logging
+import platform
+# import datetime
+
 log = logging.getLogger(__name__)
+log.setLevel(logging.CRITICAL)
+# dateTimeString = datetime.datetime.now().strftime("-%Y-%m-%d-%H-%M-%S")
+# logging.basicConfig(filename='receiver' + dateTimeString + '.log')
+
 
 class ReceiverInterface(object):
 
@@ -58,7 +65,13 @@ class ReceiverInterface(object):
 
       log.info('++ setting signals')
 
-      slist = [signal.SIGHUP, signal.SIGINT, signal.SIGQUIT, signal.SIGTERM]
+      # there was an issue on windows system where it wasn't able to handle some
+      # of the termination signals so the nf errored out added code to have
+      # termination signals looked for dependent on type of system (windows or posix). -SJF
+
+      if platform.system() == 'Windows':
+         slist = [signal.SIGABRT,signal.SIGTERM]
+      else: slist = [signal.SIGHUP, signal.SIGINT, signal.SIGQUIT, signal.SIGTERM]
       log.debug('   signals are %s' % slist)
 
       for sig in slist:

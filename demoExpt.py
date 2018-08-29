@@ -243,7 +243,7 @@ def processExperimentOptions (self, options=None):
    parser.add_option("-S", "--show_data", action="store_true",
             help="display received data in terminal if this option is specified")
    parser.add_option("-w", "--swap", action="store_true",
-            help="byte-swap numberical reads if set")
+            help="byte-swap numerical reads if set")
    parser.add_option("-f", "--fullscreen", action="store_true",
             help="run in fullscreen mode")
 
