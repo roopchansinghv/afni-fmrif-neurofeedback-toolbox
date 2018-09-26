@@ -9,3 +9,7 @@ processing and stimulus generation, based on the received data.
 The communication is handled by the `afniInterfaceRT` module, and the shipping demonstration experiment is implemented using
 [PsychoPy](http://www.psychopy.org).
 
+As of September 25, 2018 - this repository has been merged into [AFNI's](https://github.com/afni/afni) master branch, via
+[this](https://github.com/afni/afni/pull/84) pull request. All future changes/enhancements will be done in and committed to
+that repository.
+
